@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SJACS Teacher Performance Evaluation</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <style>
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f7f9; --success: #27ae60; --admin: #8e44ad; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 50px; }
+        
+        header { border-bottom: 3px solid var(--primary); margin-bottom: 30px; text-align: center; padding-bottom: 20px; }
+        header h1 { margin: 0; font-size: 26px; color: var(--primary); }
+        header h2 { margin: 5px 0; font-size: 18px; font-weight: normal; line-height: 1.4; }
+        
+        .section-header { background: var(--secondary); color: white; padding: 12px 20px; margin-top: 40px; border-radius: 6px; font-size: 18px; font-weight: bold; }
+        .scope-title { background: #7f8c8d; color: white; padding: 12px 20px; margin-top: 30px; border-radius: 6px; font-size: 18px; font-weight: bold; text-align: left; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .info-item { display: flex; flex-direction: column; margin-bottom: 10px; }
+        .info-item label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .info-item input, .info-item textarea, .info-item select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #dee2e6; padding: 15px; vertical-align: top; line-height: 1.5; word-wrap: break-word; }
+        th { background: #f8f9fa; font-weight: bold; text-align: left; }
+        
+        .item-code { width: 45px; font-weight: bold; color: var(--accent); }
+        .score-cell { width: 110px; text-align: center; }
+        
+        input[type="number"] { width: 65px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; }
+        input.score-input { border: 2px solid var(--accent); color: var(--primary); background-color: #f0faff; }
+        
+        input:disabled, select:disabled, textarea:disabled { background-color: #f2f2f2 !important; border-color: #ddd !important; cursor: not-allowed; color: #777; }
+
+        .final-score-container { background: #2c3e50; color: white; padding: 25px; margin-top: 40px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .score-display { font-size: 36px; font-weight: bold; color: #f1c40f; }
+        
+        .signature-box { border: 2px dashed #bdc3c7; background: #fafafa; margin-top: 20px; border-radius: 8px; position: relative; }
+        #sig-canvas { width: 100%; height: 200px; cursor: crosshair; touch-action: none; }
+        
+        .admin-controls { background: #f3e5f5; padding: 20px; border-radius: 8px; border: 2px solid var(--admin); margin-top: 20px; text-align: center; }
+        .btn-admin { background: var(--admin); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-submit { background: var(--success); color: white; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 18px; margin-top: 30px; }
+        
+        #link-output { margin-top: 15px; word-break: break-all; font-family: monospace; font-size: 14px; background: white; padding: 20px; border: 2px solid var(--success); border-radius: 8px; display: none; }
+
+        #login-gate { background: #eee; padding: 20px; border-radius: 8px; margin-top: 30px; display: none; border: 2px solid var(--admin); text-align: center; }
+        #admin-page { display: none; margin-top: 50px; border-top: 4px solid var(--admin); padding-top: 20px; }
+        .dashboard-table { font-size: 11px; overflow-x: auto; }
+        .avg-highlight { background: #fff9e6; font-weight: bold; border-top: 2px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>聖若瑟英文中學 (St. Joseph’s Anglo-Chinese School)</h1>
+        <h2>2025-2026年度新入職 / 轉職教師評鑑表</h2>
+    </header>
+
+    <form id="evaluationForm">
+        <div class="section-header">1. 申請教師個人資料 (Applicant’s Information)</div>
+        <div class="info-grid">
+            <div class="info-item"><label>教師姓名 (Teacher’s Name)：</label><input type="text" id="teacher_name" class="phase1" required></div>
+            <div class="info-item"><label>於本校教學年資 (Experience at SJACS)：</label><input type="text" id="sjacs_exp" class="phase1"></div>
+            <div class="info-item"><label>現在職級 (Current Rank)：</label><input type="text" id="current_rank" class="phase1"></div>
+            <div class="info-item"><label>入職年份 (Date of Appointment)：</label><input type="date" id="app_date" class="phase1"></div>
+        </div>
+        <div class="info-item" style="margin-top:15px;">
+            <label>2025-2026年任教班級及科目：</label>
+            <textarea rows="2" id="subjects" class="phase1"></textarea>
+        </div>
+
+        <div class="section-header">2. 評核人員資料 (Appraiser’s Information)</div>
+        <div class="info-grid">
+            <div class="info-item"><label>評核人員姓名：</label><input type="text" id="appraiser_name" class="phase1" required></div>
+            <div class="info-item">
+                <label>職級 (Rank)：</label>
+                <select id="appraiser_rank" class="phase1">
+                    <option value="">-- Select Rank --</option>
+                    <option value="PGM">PGM</option>
+                    <option value="SGM">SGM</option>
+                    <option value="GM">GM</option>
+                </select>
+            </div>
+            <div class="info-item" style="grid-column: span 2;">
+                <label>職位 (Position)：</label>
+                <select id="appraiser-position" class="phase1" onchange="toggleTeachingSection()">
+                    <option value="">-- Select Position --</option>
+                    <option value="Subject Panel Head">Subject Panel Head</option>
+                    <option value="VP (Academic)">VP (Academic)</option>
+                    <option value="VP (Students Nurturing and Support)">VP (Students Nurturing and Support)</option>
+                    <option value="VP (School Administration & Resources Affairs)">VP (School Administration & Resources Affairs)</option>
+                    <option value="AP">AP</option>
+                    <option value="Committee (i/c)">Committee (i/c)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="admin-controls" id="admin-panel">
+            <p><strong>School Admin Phase:</strong> Enter the info above, then generate a code for the evaluator.</p>
+            <button type="button" class="btn-admin" onclick="generateLink()">Save Draft & Generate Access Code</button>
+            <div id="link-output"></div>
+        </div>
+
+        <hr style="margin-top: 50px; border: 1px solid #eee;">
+
+        <div class="scope-title">3. 評核範疇及分數 (Scopes of Assessment & Scores)</div>
+
+        <div class="section-header">3.1 教學表現及課室管理</div>
+        <table>
+            <tr><td class="item-code">1A</td><td>Curriculum Design & Planning</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1A" min="0" max="8"></td></tr>
+            <tr><td class="item-code">1B</td><td>Classroom Management & Interaction</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1B" min="0" max="8"></td></tr>
+            <tr><td class="item-code">1C</td><td>Instructional Delivery & Resources</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1C" min="0" max="8"></td></tr>
+            <tr><td class="item-code">1D</td><td>Subject Knowledge & Integration</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1D" min="0" max="8"></td></tr>
+        </table>
+
+        <div class="section-header">3.2 師德及學生培育</div>
+        <table>
+            <tr><td class="item-code">2A</td><td>Professional Image & Interpersonal Relations</td><td class="score-cell"><input type="number" class="score-input" data-item="2A" min="0" max="8"></td></tr>
+            <tr><td class="item-code">2B</td><td>Attendance & Punctuality (Auto)</td><td class="score-cell"><input type="number" id="attendance-score" class="score-input" data-item="2B" value="8" readonly style="background:#e3f2fd"></td></tr>
+            <tr><td class="item-code">2C</td><td>Work Attitude & Student Care</td><td class="score-cell"><input type="number" class="score-input" data-item="2C" min="0" max="8"></td></tr>
+            <tr><td class="item-code">2D</td><td>Values Education & National Identity</td><td class="score-cell"><input type="number" class="score-input" data-item="2D" min="0" max="8"></td></tr>
+        </table>
+
+        <div class="section-header">3.3 教師持續專業發展</div>
+        <table>
+            <tr><td class="item-code">3A</td><td>Professional Training (CPD)</td><td class="score-cell"><input type="number" id="cpd-score" class="score-input" data-item="3A" value="1" readonly style="background:#e3f2fd"></td></tr>
+            <tr><td class="item-code">3B</td><td>Team Collaboration</td><td class="score-cell"><input type="number" class="score-input" data-item="3B" min="0" max="8"></td></tr>
+            <tr><td class="item-code">3C</td><td>Pedagogical Research & Strategy</td><td class="score-cell"><input type="number" class="score-input" data-item="3C" min="0" max="8"></td></tr>
+            <tr><td class="item-code">3D</td><td>Catholic Core Values & Mission</td><td class="score-cell"><input type="number" class="score-input" data-item="3D" min="0" max="8"></td></tr>
+        </table>
+
+        <div class="final-score-container">
+            <div>Final Evaluation Score (總結得分):</div>
+            <div class="score-display"><span id="totalScore">0</span> / <span id="maxPossible">96</span></div>
+        </div>
+
+        <div class="section-header">Supervisor Signature (評分人簽署)</div>
+        <div class="signature-box"><canvas id="sig-canvas"></canvas></div>
+        <button type="submit" class="btn-submit">Complete & Save to Database</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <button class="btn-admin" id="open-admin-btn" onclick="showLoginGate()">Open Admin Master Dashboard</button>
+    </div>
+
+    <div id="login-gate">
+        <h3 style="color:var(--admin)">Admin Security Authentication</h3>
+        <input type="email" id="admin-email" placeholder="Admin Email" style="width:250px; margin-bottom:10px;"><br>
+        <input type="password" id="admin-password" placeholder="Password" style="width:250px; margin-bottom:10px;"><br>
+        <button class="btn-admin" onclick="handleAdminLogin()">Login</button>
+    </div>
+
+    <div id="admin-page">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color:var(--admin)">Admin Master Dashboard (Live Averages)</h2>
+            <button onclick="firebase.auth().signOut().then(()=>location.reload())">Logout</button>
+        </div>
+        <div id="admin-data-container" class="dashboard-table">
+            <p>Waiting for authentication...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- FIREBASE INITIALIZATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAuS7S9jyCEGi6sO1yrXDar1w0NKa-DWQk",
+        authDomain: "sjacs-evaluation.firebaseapp.com",
+        databaseURL: "https://sjacs-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sjacs-evaluation",
+        storageBucket: "sjacs-evaluation.firebasestorage.app",
+        messagingSenderId: "889239849713",
+        appId: "1:889239849713:web:ee35b33bc778b7c6eb7750"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const auth = firebase.auth();
+
+    const phase1Fields = ['teacher_name', 'sjacs_exp', 'current_rank', 'app_date', 'subjects', 'appraiser_name', 'appraiser_rank', 'appraiser-position'];
+
+    // PHASE 1: Generate Code (Saves to Firebase Drafts)
+    function generateLink() {
+        const data = {};
+        phase1Fields.forEach(id => data[id] = document.getElementById(id).value);
+        
+        // Generate random 4-digit code
+        const accessCode = Math.floor(1000 + Math.random() * 9000);
+
+        database.ref('drafts/' + accessCode).set(data).then(() => {
+            const output = document.getElementById('link-output');
+            output.style.display = 'block';
+            output.innerHTML = `
+                <div style="text-align:center;">
+                    <strong style="color:var(--success); font-size:18px;">DRAFT SAVED TO CLOUD</strong><br><br>
+                    Please tell the evaluator to enter this code when they open the file:<br>
+                    <span style="font-size:48px; font-weight:bold; letter-spacing:10px; color:var(--primary);">${accessCode}</span>
+                </div>
+            `;
+            alert("Draft information saved. Provide the 4-digit code to the evaluator.");
+        }).catch(err => alert("Error saving draft: " + err.message));
+    }
+
+    // ON LOAD: Prompt for Access Code
+    window.onload = function() {
+        const code = prompt("If you have an Evaluation Access Code, enter it here. \nOtherwise, click Cancel to start a new form.");
+        if (code && code.trim() !== "") {
+            database.ref('drafts/' + code).once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    phase1Fields.forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) {
+                            el.value = data[id];
+                            el.disabled = true;
+                        }
+                    });
+                    document.getElementById('admin-panel').style.display = 'none';
+                    toggleTeachingSection();
+                    alert("Teacher data loaded successfully from Cloud!");
+                } else {
+                    alert("Invalid Access Code. Please check with the administrator.");
+                }
+            });
+        }
+    };
+
+    // FORM SUBMISSION
+    document.getElementById('evaluationForm').onsubmit = function(e) {
+        e.preventDefault();
+        const scores = {};
+        document.querySelectorAll('.score-input').forEach(input => {
+            if (!input.disabled) scores[input.getAttribute('data-item')] = parseInt(input.value) || 0;
+        });
+        const submissionData = {
+            teacher: document.getElementById('teacher_name').value,
+            rank: document.getElementById('current_rank').value,
+            appraiser: document.getElementById('appraiser_name').value,
+            scores: scores,
+            total: document.getElementById('totalScore').innerText,
+            timestamp: Date.now()
+        };
+        database.ref('evaluations').push(submissionData).then(() => {
+            alert("Success! Evaluation saved to SJACS Cloud Database.");
+            location.reload();
+        }).catch(err => alert("Error: " + err.message));
+    };
+
+    // ADMIN AUTHENTICATION
+    function showLoginGate() {
+        document.getElementById('login-gate').style.display = 'block';
+        document.getElementById('open-admin-btn').style.display = 'none';
+    }
+    function handleAdminLogin() {
+        const email = document.getElementById('admin-email').value;
+        const pass = document.getElementById('admin-password').value;
+        auth.signInWithEmailAndPassword(email, pass)
+            .then(() => {
+                document.getElementById('login-gate').style.display = 'none';
+                document.getElementById('admin-page').style.display = 'block';
+                fetchAverages();
+            })
+            .catch(err => alert("Login Failed: " + err.message));
+    }
+
+    // DASHBOARD & AVERAGES
+    function fetchAverages() {
+        database.ref('evaluations').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+            const teacherGroups = {};
+            Object.values(data).forEach(entry => {
+                if (!teacherGroups[entry.teacher]) teacherGroups[entry.teacher] = [];
+                teacherGroups[entry.teacher].push(entry);
+            });
+            let html = `<table><tr><th>Teacher</th><th>Appraiser</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th>Total</th></tr>`;
+            for (const name in teacherGroups) {
+                const entries = teacherGroups[name];
+                const sums = { "1A":0,"1B":0,"1C":0,"1D":0,"2A":0,"2B":0,"2C":0,"2D":0,"3A":0,"3B":0,"3C":0,"3D":0 };
+                let totalScoreSum = 0;
+                entries.forEach(e => {
+                    html += `<tr><td>${e.teacher}</td><td>${e.appraiser}</td>`;
+                    ["1A","1B","1C","1D","2A","2B","2C","2D","3A","3B","3C","3D"].forEach(code => {
+                        const val = e.scores[code] || 0;
+                        sums[code] += val;
+                        html += `<td>${val}</td>`;
+                    });
+                    html += `<td>${e.total}</td></tr>`;
+                    totalScoreSum += parseInt(e.total);
+                });
+                html += `<tr class="avg-highlight"><td>AVG: ${name}</td><td>(${entries.length} forms)</td>`;
+                ["1A","1B","1C","1D","2A","2B","2C","2D","3A","3B","3C","3D"].forEach(code => {
+                    html += `<td>${(sums[code] / entries.length).toFixed(1)}</td>`;
+                });
+                html += `<td>${(totalScoreSum / entries.length).toFixed(1)}</td></tr>`;
+            }
+            html += `</table>`;
+            document.getElementById('admin-data-container').innerHTML = html;
+        });
+    }
+
+    function toggleTeachingSection() {
+        const pos = document.getElementById('appraiser-position').value;
+        const canAssess = (pos === "Subject Panel Head" || pos === "VP (Academic)");
+        document.querySelectorAll('.teaching-input').forEach(i => {
+            i.disabled = !canAssess;
+            if (!canAssess) i.value = "";
+        });
+        document.getElementById('maxPossible').innerText = canAssess ? "96" : "64";
+        updateGrandTotal();
+    }
+    function updateGrandTotal() {
+        let total = 0;
+        document.querySelectorAll('.score-input').forEach(i => {
+            if (!i.disabled) total += (parseInt(i.value) || 0);
+        });
+        document.getElementById('totalScore').innerText = total;
+    }
+    document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', updateGrandTotal));
+
+    const canvas = document.getElementById('sig-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth; canvas.height = 200;
+    let drawing = false;
+    canvas.addEventListener('mousedown', () => drawing = true);
+    window.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mousemove', (e) => {
+        if(!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+    });
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+</script>
+</body>
+</html>
