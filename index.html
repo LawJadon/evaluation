@@ -10,9 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f7f9; --success: #27ae60; --admin: #8e44ad; }
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f7f9; --success: #27ae60; --admin: #8e44ad; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 50px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin-bottom: 50px; }
         header { border-bottom: 3px solid var(--primary); margin-bottom: 30px; text-align: center; padding-bottom: 20px; }
         header h1 { margin: 0; font-size: 26px; color: var(--primary); }
         .section-header { background: var(--secondary); color: white; padding: 12px 20px; margin-top: 40px; border-radius: 6px; font-size: 18px; font-weight: bold; }
@@ -21,18 +21,25 @@
         .info-item label { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         .info-item input, .info-item textarea, .info-item select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; vertical-align: middle; }
-        th { background: #f8f9fa; font-weight: bold; text-align: left; }
-        .item-code { width: 50px; font-weight: bold; color: var(--accent); text-align: center; }
-        .score-cell { width: 120px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #dee2e6; padding: 8px; vertical-align: middle; text-align: left; font-size: 13px; }
+        th { background: #f8f9fa; font-weight: bold; text-align: center; }
+        .item-code { width: 60px; text-align: center; font-weight: bold; }
+        .score-cell { width: 130px; text-align: center; }
         
+        .col-teach { background-color: #fff9db !important; }
+        .col-ethic { background-color: #ebfbee !important; }
+        .col-cpd { background-color: #e7f5ff !important; }
+        .col-total { background-color: #f8f0fc !important; font-weight: bold; }
+        
+        .edit-input { width: 35px; padding: 4px; border: 1px solid #999; border-radius: 3px; text-align: center; font-weight: bold; }
         input[type="number"] { width: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; }
         .score-input { border: 2px solid var(--accent); background-color: #f0faff; }
-        .readonly-score { background-color: #e3f2fd !important; border: 2px solid #2980b9; }
+        .readonly-locked { background-color: #eee !important; color: #666; cursor: not-allowed; }
         
         .sub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 4px; }
-        .sub-grid label { font-size: 12px; display: block; margin-bottom: 3px; }
+        .sub-grid div { display: flex; flex-direction: column; align-items: center; font-size: 11px; }
+        .sub-grid label { margin-bottom: 3px; font-weight: normal; }
 
         .final-score-container { background: var(--primary); color: white; padding: 25px; margin-top: 40px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
         .score-display { font-size: 36px; font-weight: bold; color: #f1c40f; }
@@ -41,15 +48,20 @@
         #sig-canvas { width: 100%; height: 180px; cursor: crosshair; touch-action: none; }
         
         .admin-controls { background: #f3e5f5; padding: 20px; border-radius: 8px; border: 2px solid var(--admin); margin-top: 20px; text-align: center; }
-        .btn-admin { background: var(--admin); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-admin { background: var(--admin); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-submit { background: var(--success); color: white; width: 100%; padding: 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 18px; margin-top: 30px; }
+        .btn-delete { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
         
         #admin-page { display: none; margin-top: 50px; padding-top: 20px; border-top: 5px solid var(--admin); }
-        .dashboard-table { width: 100%; overflow-x: auto; font-size: 12px; margin-top: 20px; }
-        .dashboard-table table { min-width: 1000px; }
-        .dashboard-table th { background: var(--admin); color: white; padding: 8px; }
-        .dashboard-table td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-        .na-cell { color: #999; font-style: italic; background-color: #f9f9f9; }
+        .dashboard-table { width: 100%; overflow-x: auto; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+        #teacher-averages-container table, 
+        #teacher-averages-container th, 
+        #teacher-averages-container td, 
+        #teacher-averages-container strong {
+            color: black !important;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -65,12 +77,23 @@
         <div class="info-grid">
             <div class="info-item"><label>教師姓名：</label><input type="text" id="teacher_name" required></div>
             <div class="info-item"><label>本校教學年資：</label><input type="text" id="sjacs_exp"></div>
-            <div class="info-item"><label>現在職級：</label><input type="text" id="current_rank"></div>
+            <div class="info-item">
+                <label>現在職級：</label>
+                <select id="current_rank">
+                    <option value="">-- Select Rank --</option>
+                    <option value="GM">GM</option>
+                    <option value="SGM">SGM</option>
+                </select>
+            </div>
             <div class="info-item"><label>入職年份：</label><input type="date" id="app_date"></div>
         </div>
         <div class="info-item" style="margin-top:15px;">
-            <label>2025-2026年任教班級及科目：</label>
+            <label>任教班級及科目：</label>
             <textarea rows="2" id="subjects" style="width:100%; padding:10px;"></textarea>
+        </div>
+        <div class="info-item" style="margin-top:15px;">
+            <label>行政Duty：</label>
+            <textarea rows="2" id="admin_duty" style="width:100%; padding:10px;"></textarea>
         </div>
 
         <div class="section-header">2. 評核人員資料 (Appraiser’s Information)</div>
@@ -78,7 +101,7 @@
             <div class="info-item"><label>評核人員姓名：</label><input type="text" id="appraiser_name" required></div>
             <div class="info-item">
                 <label>職位 (Position)：</label>
-                <select id="appraiser-position" onchange="toggleTeachingSection()">
+                <select id="appraiser-position" onchange="toggleTeachingSection()" required>
                     <option value="">-- Select Position --</option>
                     <option value="Subject Panel Head">Subject Panel Head</option>
                     <option value="VP (Academic)">VP (Academic)</option>
@@ -91,38 +114,38 @@
         </div>
 
         <div class="admin-controls" id="admin-panel">
-            <p style="margin-bottom:10px; font-weight:bold; color:var(--admin);">Administrative Use: Save draft for the appraiser</p>
-            <button type="button" class="btn-admin" onclick="generateLink()">Save Draft & Generate Access Code</button>
-            <div id="link-output" style="margin-top:15px; font-size:24px; font-weight:bold; color:var(--success);"></div>
+            <p>Admin Setup Phase (Enter 2B & 3A, then generate code)</p>
+            <button type="button" class="btn-admin" onclick="generateLink()">Save Draft & Generate Code</button>
+            <div id="link-output" style="margin-top:10px; font-weight:bold; color:var(--success);"></div>
         </div>
 
         <div class="section-header">3.1 教學表現及課室管理 (Teaching Performance)</div>
         <table>
             <tr><th class="item-code">Item</th><th>Assessment Content</th><th class="score-cell">Score (1-8)</th></tr>
-            <tr><td class="item-code">1A</td><td>Curriculum Design & Planning</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1A" min="0" max="8"></td></tr>
-            <tr><td class="item-code">1B</td><td>Classroom Management & Interaction</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1B" min="0" max="8"></td></tr>
-            <tr><td class="item-code">1C</td><td>Instructional Delivery & Resources</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1C" min="0" max="8"></td></tr>
-            <tr><td class="item-code">1D</td><td>Subject Knowledge & Integration</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1D" min="0" max="8"></td></tr>
+            <tr><td class="item-code">1A</td><td>Curriculum Design & Planning</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1A" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1B</td><td>Classroom Management & Interaction</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1B" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1C</td><td>Instructional Delivery & Resources</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1D</td><td>Subject Knowledge & Integration</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1D" min="1" max="8"></td></tr>
         </table>
 
         <div class="section-header">3.2 師德及學生培育 (Ethics & Attendance)</div>
         <table>
             <tr><th class="item-code">Item</th><th>Assessment Content</th><th class="score-cell">Score (1-8)</th></tr>
-            <tr><td class="item-code">2A</td><td>Professional Image & Interpersonal Relations</td><td class="score-cell"><input type="number" class="score-input" data-item="2A" min="0" max="8"></td></tr>
+            <tr><td class="item-code">2A</td><td>Professional Image & Interpersonal Relations</td><td class="score-cell"><input type="number" class="score-input" data-item="2A" min="1" max="8"></td></tr>
             <tr>
                 <td class="item-code">2B</td>
                 <td>
-                    <strong>Attendance & Punctuality</strong>
+                    <strong>Attendance & Punctuality</strong> (Locked for Assessor)
                     <div class="sub-grid">
-                        <div><label>Sick (天)</label><input type="number" id="sick-days" value="0" min="0" oninput="calculateAttendance()"></div>
-                        <div><label>Late (次)</label><input type="number" id="late-times" value="0" min="0" oninput="calculateAttendance()"></div>
-                        <div><label>Private (天)</label><input type="number" id="private-leave" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Sick (天)</label><input type="number" id="sick-days" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Late (次)</label><input type="number" id="late-times" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Private (天)</label><input type="number" id="private-leave" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
                     </div>
                 </td>
-                <td class="score-cell"><input type="number" id="attendance-score" data-item="2B" class="score-input readonly-score" value="8" readonly></td>
+                <td class="score-cell"><input type="number" id="attendance-score" data-item="2B" class="score-input readonly-locked" value="8" readonly></td>
             </tr>
-            <tr><td class="item-code">2C</td><td>Work Attitude & Student Care</td><td class="score-cell"><input type="number" class="score-input" data-item="2C" min="0" max="8"></td></tr>
-            <tr><td class="item-code">2D</td><td>Values Education & National Identity</td><td class="score-cell"><input type="number" class="score-input" data-item="2D" min="0" max="8"></td></tr>
+            <tr><td class="item-code">2C</td><td>Work Attitude & Student Care</td><td class="score-cell"><input type="number" class="score-input" data-item="2C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">2D</td><td>Values Education & National Identity</td><td class="score-cell"><input type="number" class="score-input" data-item="2D" min="1" max="8"></td></tr>
         </table>
 
         <div class="section-header">3.3 教師持續專業發展 (CPD)</div>
@@ -131,50 +154,50 @@
             <tr>
                 <td class="item-code">3A</td>
                 <td>
-                    <strong>Professional Training & Qualifications</strong>
-                    <div style="margin-top:10px;"><label>CPD (小時) </label><input type="number" id="cpd-hours" value="0" min="0" oninput="calculateCPD()" style="width:80px;"></div>
+                    <strong>Professional Training (CPD)</strong> (Locked for Assessor)
+                    <div style="margin-top:10px;"><label>CPD (小時) </label><input type="number" id="cpd-hours" class="phase1-input" value="0" min="0" oninput="calculateCPD()" style="width:80px;"></div>
                 </td>
-                <td class="score-cell"><input type="number" id="cpd-score" data-item="3A" class="score-input readonly-score" value="1" readonly></td>
+                <td class="score-cell"><input type="number" id="cpd-score" data-item="3A" class="score-input readonly-locked" value="1" readonly></td>
             </tr>
-            <tr><td class="item-code">3B</td><td>Team Collaboration</td><td class="score-cell"><input type="number" class="score-input" data-item="3B" min="0" max="8"></td></tr>
-            <tr><td class="item-code">3C</td><td>Pedagogical Research & Strategy</td><td class="score-cell"><input type="number" class="score-input" data-item="3C" min="0" max="8"></td></tr>
-            <tr><td class="item-code">3D</td><td>Catholic Core Values & Mission</td><td class="score-cell"><input type="number" class="score-input" data-item="3D" min="0" max="8"></td></tr>
+            <tr><td class="item-code">3B</td><td>Team Collaboration</td><td class="score-cell"><input type="number" class="score-input" data-item="3B" min="1" max="8"></td></tr>
+            <tr><td class="item-code">3C</td><td>Pedagogical Research & Strategy</td><td class="score-cell"><input type="number" class="score-input" data-item="3C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">3D</td><td>Catholic Core Values & Mission</td><td class="score-cell"><input type="number" class="score-input" data-item="3D" min="1" max="8"></td></tr>
         </table>
 
         <div class="final-score-container">
-            <div style="font-size: 20px; font-weight: bold;">Final Evaluation Score (總結得分):</div>
+            <div>Final Score:</div>
             <div class="score-display"><span id="totalScore">0</span> / <span id="maxPossible">96</span></div>
         </div>
 
-        <div class="section-header">Supervisor Signature (評分人簽署)</div>
+        <div class="section-header">Supervisor Signature</div>
         <div class="signature-box">
             <canvas id="sig-canvas"></canvas>
-            <button type="button" onclick="clearSignature()" style="position:absolute; bottom:5px; right:5px; font-size:10px; padding:2px 5px;">Clear</button>
+            <button type="button" onclick="clearSignature()" style="position:absolute; bottom:5px; right:5px;">Clear</button>
         </div>
         
-        <button type="submit" class="btn-submit">Submit Final Evaluation</button>
+        <button type="submit" class="btn-submit">Confirm & Submit Evaluation</button>
     </form>
 
     <div style="text-align: center; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
-        <button class="btn-admin" onclick="toggleAdminLogin()">View Admin Dashboard (Score Summary)</button>
+        <button class="btn-admin" onclick="toggleAdminLogin()">Admin Dashboard</button>
     </div>
-
-    <div id="login-gate" style="display:none; margin-top:20px; text-align:center; background:#eee; padding:20px; border-radius:8px;">
-        <input type="email" id="admin-email" placeholder="Admin Email" style="padding:10px; margin-right:10px;">
-        <input type="password" id="admin-password" placeholder="Password" style="padding:10px; margin-right:10px;">
+    <div id="login-gate" style="display:none; margin-top:20px; text-align:center;">
+        <input type="email" id="admin-email" placeholder="Admin Email" style="padding:10px;">
+        <input type="password" id="admin-password" placeholder="Pass" style="padding:10px;">
         <button onclick="handleAdminLogin()" class="btn-admin">Login</button>
     </div>
 
     <div id="admin-page">
-        <h2 style="color:var(--admin);">Evaluation Summary Dashboard</h2>
-        <div id="admin-data-container" class="dashboard-table">
-            <p>Loading summary data...</p>
-        </div>
+        <h2 style="color:var(--admin);">1. Teacher Master Summary (Averages)</h2>
+        <div id="teacher-averages-container" class="dashboard-table"></div>
+
+        <h2 style="color:var(--admin); margin-top:40px;">2. Editable Raw Entry Log</h2>
+        <p style="font-size: 12px; color: #666;">* Click any score to change it. Changes save automatically.</p>
+        <div id="admin-data-container" class="dashboard-table"></div>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyAuS7S9jyCEGi6sO1yrXDar1w0NKa-DWQk",
         authDomain: "sjacs-evaluation.firebaseapp.com",
@@ -188,52 +211,62 @@
     const database = firebase.database();
     const auth = firebase.auth();
 
-    const phase1Fields = ['teacher_name', 'sjacs_exp', 'current_rank', 'app_date', 'subjects', 'appraiser_name', 'appraiser-position', 'sick-days', 'late-times', 'private-leave', 'cpd-hours'];
+    let isCanvasEmpty = true;
+    const itemKeys = ['1A','1B','1C','1D','2A','2B','2C','2D','3A','3B','3C','3D'];
 
-    // --- LOGIC: CALCULATIONS ---
+    // Instantly calculate totals as the appraiser types
+    document.querySelectorAll('.score-input').forEach(input => {
+        input.addEventListener('input', updateGrandTotal);
+    });
+
     function calculateAttendance() {
         const s = parseInt(document.getElementById('sick-days').value) || 0;
         const l = parseInt(document.getElementById('late-times').value) || 0;
         const p = parseInt(document.getElementById('private-leave').value) || 0;
         const index = s + p + (l * 3);
-        let score = 8;
-        if (index === 0) score = 8; else if (index < 3) score = 7; else if (index < 6) score = 6;
-        else if (index < 9) score = 5; else if (index < 12) score = 4; else if (index < 15) score = 3;
-        else if (index < 18) score = 2; else score = 1;
+        let score = (index === 0) ? 8 : (index < 3) ? 7 : (index < 6) ? 6 : (index < 9) ? 5 : (index < 12) ? 4 : (index < 15) ? 3 : (index < 18) ? 2 : 1;
         document.getElementById('attendance-score').value = score;
         updateGrandTotal();
     }
 
     function calculateCPD() {
         const h = parseInt(document.getElementById('cpd-hours').value) || 0;
-        let score = 1;
-        if (h >= 50) score = 8; else if (h >= 40) score = 7; else if (h >= 30) score = 6;
-        else if (h >= 20) score = 5; else if (h >= 15) score = 4; else if (h >= 10) score = 3;
-        else if (h >= 5) score = 2; else score = 1;
+        let score = (h >= 75) ? 8 : (h >= 60) ? 7 : (h >= 50) ? 6 : (h >= 40) ? 5 : (h >= 30) ? 4 : (h >= 25) ? 3 : (h >= 20) ? 2 : 1;
         document.getElementById('cpd-score').value = score;
         updateGrandTotal();
     }
 
-    // --- LOGIC: DRAFT SAVING ---
+    function updateGrandTotal() {
+        let total = 0;
+        document.querySelectorAll('.score-input').forEach(i => { 
+            if(!i.disabled && i.offsetParent !== null) { 
+                total += (parseInt(i.value) || 0); 
+            } 
+        });
+        document.getElementById('totalScore').innerText = total;
+    }
+
     function generateLink() {
         const data = {};
-        if(!document.getElementById('teacher_name').value) { alert("Please enter Teacher Name."); return; }
-        phase1Fields.forEach(id => data[id] = document.getElementById(id).value);
+        const fields = ['teacher_name', 'sjacs_exp', 'current_rank', 'app_date', 'subjects', 'admin_duty', 'appraiser_name', 'appraiser-position', 'sick-days', 'late-times', 'private-leave', 'cpd-hours'];
+        fields.forEach(id => data[id] = document.getElementById(id).value);
         const code = Math.floor(1000 + Math.random() * 9000);
         database.ref('drafts/' + code).set(data).then(() => {
-            document.getElementById('link-output').innerHTML = "Access Code: " + code;
-            alert("Draft Saved! Give code " + code + " to the Appraiser.");
+            document.getElementById('link-output').innerHTML = "CODE: " + code;
+            alert("Draft Saved.");
         });
     }
 
     window.onload = function() {
-        const code = prompt("Enter 4-digit Access Code or leave blank:");
+        const code = prompt("Enter 4-digit Code or leave blank:");
         if (code && code.trim() !== "") {
             database.ref('drafts/' + code.trim()).once('value').then(snap => {
                 const d = snap.val();
                 if (d) {
-                    phase1Fields.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = d[id]; });
+                    const fields = ['teacher_name', 'sjacs_exp', 'current_rank', 'app_date', 'subjects', 'admin_duty', 'appraiser_name', 'appraiser-position', 'sick-days', 'late-times', 'private-leave', 'cpd-hours'];
+                    fields.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = d[id]; });
                     calculateAttendance(); calculateCPD();
+                    document.querySelectorAll('.phase1-input').forEach(i => i.disabled = true);
                     document.getElementById('admin-panel').style.display = 'none';
                     toggleTeachingSection();
                 }
@@ -242,111 +275,132 @@
     };
 
     function toggleTeachingSection() {
-        const pos = document.getElementById('appraiser-position').value;
-        const can = (pos === "Subject Panel Head" || pos === "VP (Academic)");
-        document.querySelectorAll('.teaching-input').forEach(i => {
-            i.disabled = !can;
-            if(!can) i.value = "";
-        });
+        const can = (document.getElementById('appraiser-position').value === "Subject Panel Head" || document.getElementById('appraiser-position').value === "VP (Academic)");
+        document.querySelectorAll('.teaching-input').forEach(i => { i.disabled = !can; if(!can) i.value = ""; });
         document.getElementById('maxPossible').innerText = can ? "96" : "64";
         updateGrandTotal();
     }
 
-    function updateGrandTotal() {
-        let total = 0;
-        document.querySelectorAll('.score-input').forEach(i => {
-            if(!i.disabled) total += (parseInt(i.value) || 0);
-        });
-        document.getElementById('totalScore').innerText = total;
-    }
-
-    document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', updateGrandTotal));
-
-    // --- LOGIC: SUBMISSION ---
     document.getElementById('evaluationForm').onsubmit = function(e) {
         e.preventDefault();
-        const pos = document.getElementById('appraiser-position').value;
-        const canTeach = (pos === "Subject Panel Head" || pos === "VP (Academic)");
+        let filled = true;
+        document.querySelectorAll('.score-input').forEach(i => { if(!i.disabled && !i.value) filled = false; });
+        if (isCanvasEmpty || !filled) { alert("Check all scores and signature."); return; }
         
-        const scores = {};
-        document.querySelectorAll('.score-input').forEach(i => {
-            const code = i.getAttribute('data-item');
-            if(code) scores[code] = i.value;
-        });
-
-        const finalData = {
-            teacher: document.getElementById('teacher_name').value,
-            appraiser: document.getElementById('appraiser_name').value,
-            total: document.getElementById('totalScore').innerText,
-            isTeachingAuthorized: canTeach, // Metadata to help Admin Page
-            scores: scores,
-            timestamp: Date.now()
-        };
-
-        database.ref('evaluations').push(finalData).then(() => {
-            alert("Submitted Successfully!");
-            location.reload();
-        });
+        if (confirm("Confirm Final Submission?")) {
+            const scores = {};
+            document.querySelectorAll('.score-input').forEach(i => { if(i.dataset.item) scores[i.dataset.item] = i.value; });
+            const finalData = {
+                teacher: document.getElementById('teacher_name').value,
+                appraiser: document.getElementById('appraiser_name').value,
+                isTeachingAuth: !document.querySelector('.teaching-input').disabled,
+                scores: scores,
+                total: document.getElementById('totalScore').innerText,
+                timestamp: Date.now()
+            };
+            database.ref('evaluations').push(finalData).then(() => { location.reload(); });
+        }
     };
 
-    // --- LOGIC: ADMIN DASHBOARD (N/A Logic Added Here) ---
     function toggleAdminLogin() { document.getElementById('login-gate').style.display = 'block'; }
     function handleAdminLogin() {
         auth.signInWithEmailAndPassword(document.getElementById('admin-email').value, document.getElementById('admin-password').value)
-        .then(() => {
-            document.getElementById('login-gate').style.display = 'none';
-            document.getElementById('admin-page').style.display = 'block';
-            fetchAdminData();
-        }).catch(err => alert("Login Error: " + err.message));
+        .then(() => { 
+            document.getElementById('login-gate').style.display='none'; 
+            document.getElementById('admin-page').style.display='block'; 
+            fetchAdminData(); 
+        }).catch(err => alert("Login Failed."));
     }
+
+    function updateScore(entryId, itemKey, newValue) {
+        const val = parseInt(newValue);
+        if (val < 0 || val > 8 || isNaN(val)) { alert("Enter a score between 0-8"); return; }
+        database.ref(`evaluations/${entryId}/scores/${itemKey}`).set(newValue.toString());
+        database.ref(`evaluations/${entryId}`).once('value', snap => {
+            const e = snap.val();
+            let newTotal = 0;
+            Object.values(e.scores).forEach(s => newTotal += parseInt(s || 0));
+            database.ref(`evaluations/${entryId}/total`).set(newTotal.toString());
+        });
+    }
+
+    function deleteEntry(id) { if(confirm("Permanently delete this entry?")) database.ref('evaluations/' + id).remove(); }
 
     function fetchAdminData() {
         database.ref('evaluations').on('value', snap => {
             const data = snap.val();
-            if(!data) { document.getElementById('admin-data-container').innerHTML = "No data."; return; }
+            if(!data) { 
+                document.getElementById('admin-data-container').innerHTML = "No entries."; 
+                document.getElementById('teacher-averages-container').innerHTML = "";
+                return; 
+            }
+
+            const teacherGroups = {};
+            let logHtml = `<table><tr><th style="width:100px;">Teacher</th><th style="width:100px;">Appraiser</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="width:40px;">Tot</th><th style="width:60px;">Act</th></tr>`;
             
-            let html = `<table><tr><th>Teacher</th><th>Appraiser</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th>TOTAL</th></tr>`;
-            
-            Object.values(data).forEach(e => {
+            Object.entries(data).forEach(([id, e]) => {
                 const s = e.scores || {};
-                const teachAuth = e.isTeachingAuthorized; // Check if this appraiser was authorized for 1A-1D
+                const tName = e.teacher;
+                if(!teacherGroups[tName]) teacherGroups[tName] = [];
+                teacherGroups[tName].push(e);
 
-                const getVal = (code) => {
-                    const teachingItems = ['1A', '1B', '1C', '1D'];
-                    if (teachingItems.includes(code) && !teachAuth) {
-                        return '<span class="na-cell">N/A</span>';
-                    }
-                    return s[code] || '0';
-                };
+                logHtml += `<tr>
+                    <td><strong>${tName}</strong></td>
+                    <td>${e.appraiser}</td>`;
+                
+                itemKeys.forEach(k => {
+                    const isTeach = k.startsWith('1');
+                    const isEthic = k.startsWith('2');
+                    const css = isTeach ? 'col-teach' : isEthic ? 'col-ethic' : 'col-cpd';
+                    const val = s[k] || '';
+                    logHtml += `<td class="${css}"><input type="number" class="edit-input" value="${val}" onchange="updateScore('${id}', '${k}', this.value)"></td>`;
+                });
 
-                html += `<tr>
-                    <td><strong>${e.teacher}</strong></td>
-                    <td>${e.appraiser}</td>
-                    <td>${getVal('1A')}</td><td>${getVal('1B')}</td><td>${getVal('1C')}</td><td>${getVal('1D')}</td>
-                    <td>${getVal('2A')}</td><td style="background:#e3f2fd">${getVal('2B')}</td><td>${getVal('2C')}</td><td>${getVal('2D')}</td>
-                    <td style="background:#e3f2fd">${getVal('3A')}</td><td>${getVal('3B')}</td><td>${getVal('3C')}</td><td>${getVal('3D')}</td>
-                    <td style="font-weight:bold; background:#eee;">${e.total}</td>
-                </tr>`;
+                logHtml += `<td class="col-total">${e.total || 0}</td>
+                    <td><button class="btn-delete" onclick="deleteEntry('${id}')">Del</button></td></tr>`;
             });
-            document.getElementById('admin-data-container').innerHTML = html + `</table>`;
+            document.getElementById('admin-data-container').innerHTML = logHtml + `</table>`;
+
+            let avgHtml = `<table><tr style="background:#f1f1f1;"><th>Teacher</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="background:#f39c12;">Final Master</th></tr>`;
+            
+            Object.keys(teacherGroups).forEach(name => {
+                const evaluations = teacherGroups[name];
+                const sums = {}; const counts = {};
+                itemKeys.forEach(i => { sums[i] = 0; counts[i] = 0; });
+
+                evaluations.forEach(ev => {
+                    itemKeys.forEach(i => {
+                        if(ev.scores[i] && ev.scores[i] !== "") {
+                            sums[i] += parseInt(ev.scores[i]);
+                            counts[i]++;
+                        }
+                    });
+                });
+
+                let overallTotal = 0;
+                avgHtml += `<tr><td><strong>${name}</strong></td>`;
+                itemKeys.forEach(i => {
+                    const avg = counts[i] > 0 ? (sums[i] / counts[i]).toFixed(1) : 0;
+                    overallTotal += parseFloat(avg);
+                    avgHtml += `<td>${avg}</td>`;
+                });
+                avgHtml += `<td style="background:#fff3cd; font-weight:bold;">${overallTotal.toFixed(1)}</td></tr>`;
+            });
+            document.getElementById('teacher-averages-container').innerHTML = avgHtml + `</table>`;
         });
     }
 
-    // --- SIGNATURE CANVAS ---
-    const canvas = document.getElementById('sig-canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('sig-canvas'); const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
     let drawing = false;
-    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mousedown', () => { drawing = true; isCanvasEmpty = false; });
     window.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
     canvas.addEventListener('mousemove', (e) => {
         if(!drawing) return;
         const rect = canvas.getBoundingClientRect();
-        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = "#000";
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-        ctx.stroke();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke();
     });
-    function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); isCanvasEmpty = true; }
 </script>
 </body>
 </html>
