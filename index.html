@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
@@ -37,7 +36,13 @@
         .edit-input { width: 35px; padding: 4px; border: 1px solid #999; border-radius: 3px; text-align: center; font-weight: bold; }
         input[type="number"] { width: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; }
         .score-input { border: 2px solid var(--accent); background-color: #f0faff; }
-        .readonly-locked { background-color: #eee !important; color: #666; cursor: not-allowed; }
+        
+        .readonly-locked, .teaching-input:disabled { 
+            background-color: #eee !important; 
+            color: #666 !important; 
+            cursor: not-allowed; 
+            border: 1px solid #ccc !important;
+        }
         
         .sub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 4px; }
         .sub-grid div { display: flex; flex-direction: column; align-items: center; font-size: 11px; }
@@ -117,37 +122,37 @@
 
         <div class="admin-controls" id="admin-panel">
             <p>Admin Setup Phase (Enter 2B & 3A, then generate code)</p>
-            <button type="button" class="btn-admin" onclick="generateLink()">Save Draft & Generate Code</button>
-            <div id="link-output" style="margin-top:10px; font-weight:bold; color:var(--success);"></div>
+            <button type="button" class="btn-admin" onclick="generateLink()">Save Draft & Generate 6-Digit Code</button>
+            <div id="link-output" style="margin-top:10px; font-weight:bold; color:var(--success); font-size: 20px;"></div>
         </div>
 
         <div class="section-header">3.1 教學表現及課室管理 (Teaching Performance)</div>
         <table>
             <tr><th class="item-code">Item</th><th>Assessment Content</th><th class="score-cell">Score (1-8)</th></tr>
-            <tr><td class="item-code">1A</td><td>Curriculum Design & Planning</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1A" min="1" max="8"></td></tr>
-            <tr><td class="item-code">1B</td><td>Classroom Management & Interaction</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1B" min="1" max="8"></td></tr>
-            <tr><td class="item-code">1C</td><td>Instructional Delivery & Resources</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1C" min="1" max="8"></td></tr>
-            <tr><td class="item-code">1D</td><td>Subject Knowledge & Integration</td><td class="score-cell"><input type="number" class="score-input teaching-input" data-item="1D" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1A</td><td>Curriculum Design & Planning</td><td class="score-cell"><input type="number" step="1" class="score-input teaching-input" data-item="1A" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1B</td><td>Classroom Management & Interaction</td><td class="score-cell"><input type="number" step="1" class="score-input teaching-input" data-item="1B" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1C</td><td>Instructional Delivery & Resources</td><td class="score-cell"><input type="number" step="1" class="score-input teaching-input" data-item="1C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">1D</td><td>Subject Knowledge & Integration</td><td class="score-cell"><input type="number" step="1" class="score-input teaching-input" data-item="1D" min="1" max="8"></td></tr>
         </table>
 
         <div class="section-header">3.2 師德及學生培育 (Ethics & Attendance)</div>
         <table>
             <tr><th class="item-code">Item</th><th>Assessment Content</th><th class="score-cell">Score (1-8)</th></tr>
-            <tr><td class="item-code">2A</td><td>Professional Image & Interpersonal Relations</td><td class="score-cell"><input type="number" class="score-input" data-item="2A" min="1" max="8"></td></tr>
+            <tr><td class="item-code">2A</td><td>Professional Image & Interpersonal Relations</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="2A" min="1" max="8"></td></tr>
             <tr>
                 <td class="item-code">2B</td>
                 <td>
-                    <strong>Attendance & Punctuality</strong> (Locked for Assessor)
+                    <strong>Attendance & Punctuality</strong> (Locked)
                     <div class="sub-grid">
-                        <div><label>Sick (天)</label><input type="number" id="sick-days" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
-                        <div><label>Late (次)</label><input type="number" id="late-times" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
-                        <div><label>Private (天)</label><input type="number" id="private-leave" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Sick (天)</label><input type="number" id="sick-days" step="0.1" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Late (次)</label><input type="number" id="late-times" step="1" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
+                        <div><label>Private (天)</label><input type="number" id="private-leave" step="0.1" class="phase1-input" value="0" min="0" oninput="calculateAttendance()"></div>
                     </div>
                 </td>
                 <td class="score-cell"><input type="number" id="attendance-score" data-item="2B" class="score-input readonly-locked" value="8" readonly></td>
             </tr>
-            <tr><td class="item-code">2C</td><td>Work Attitude & Student Care</td><td class="score-cell"><input type="number" class="score-input" data-item="2C" min="1" max="8"></td></tr>
-            <tr><td class="item-code">2D</td><td>Values Education & National Identity</td><td class="score-cell"><input type="number" class="score-input" data-item="2D" min="1" max="8"></td></tr>
+            <tr><td class="item-code">2C</td><td>Work Attitude & Student Care</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="2C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">2D</td><td>Values Education & National Identity</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="2D" min="1" max="8"></td></tr>
         </table>
 
         <div class="section-header">3.3 教師持續專業發展 (CPD)</div>
@@ -156,14 +161,14 @@
             <tr>
                 <td class="item-code">3A</td>
                 <td>
-                    <strong>Professional Training (CPD)</strong> (Locked for Assessor)
-                    <div style="margin-top:10px;"><label>CPD (小時) </label><input type="number" id="cpd-hours" class="phase1-input" value="0" min="0" oninput="calculateCPD()" style="width:80px;"></div>
+                    <strong>Professional Training (CPD)</strong> (Locked)
+                    <div style="margin-top:10px;"><label>CPD (小時) </label><input type="number" id="cpd-hours" step="0.1" class="phase1-input" value="0" min="0" oninput="calculateCPD()" style="width:80px;"></div>
                 </td>
                 <td class="score-cell"><input type="number" id="cpd-score" data-item="3A" class="score-input readonly-locked" value="1" readonly></td>
             </tr>
-            <tr><td class="item-code">3B</td><td>Team Collaboration</td><td class="score-cell"><input type="number" class="score-input" data-item="3B" min="1" max="8"></td></tr>
-            <tr><td class="item-code">3C</td><td>Pedagogical Research & Strategy</td><td class="score-cell"><input type="number" class="score-input" data-item="3C" min="1" max="8"></td></tr>
-            <tr><td class="item-code">3D</td><td>Catholic Core Values & Mission</td><td class="score-cell"><input type="number" class="score-input" data-item="3D" min="1" max="8"></td></tr>
+            <tr><td class="item-code">3B</td><td>Team Collaboration</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="3B" min="1" max="8"></td></tr>
+            <tr><td class="item-code">3C</td><td>Pedagogical Research & Strategy</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="3C" min="1" max="8"></td></tr>
+            <tr><td class="item-code">3D</td><td>Catholic Core Values & Mission</td><td class="score-cell"><input type="number" step="1" class="score-input" data-item="3D" min="1" max="8"></td></tr>
         </table>
 
         <div class="final-score-container">
@@ -192,9 +197,7 @@
     <div id="admin-page">
         <h2 style="color:var(--admin);">1. Teacher Master Summary (Averages)</h2>
         <div id="teacher-averages-container" class="dashboard-table"></div>
-
         <h2 style="color:var(--admin); margin-top:40px;">2. Editable Raw Entry Log</h2>
-        <p style="font-size: 12px; color: #666;">* Click any score to change it. Click PDF to download individual report.</p>
         <div id="admin-data-container" class="dashboard-table"></div>
     </div>
 </div>
@@ -216,22 +219,32 @@
     let isCanvasEmpty = true;
     const itemKeys = ['1A','1B','1C','1D','2A','2B','2C','2D','3A','3B','3C','3D'];
 
+    // Validation for Integers 1-8
     document.querySelectorAll('.score-input').forEach(input => {
         input.addEventListener('input', updateGrandTotal);
+        input.addEventListener('blur', function() {
+            if (this.readOnly || this.disabled || this.value === "") return;
+            const val = parseFloat(this.value);
+            if (!Number.isInteger(val) || val < 1 || val > 8) {
+                alert("Invalid Input: Please enter an INTEGER between 1 and 8.");
+                this.value = "";
+                updateGrandTotal();
+            }
+        });
     });
 
     function calculateAttendance() {
-        const s = parseInt(document.getElementById('sick-days').value) || 0;
+        const s = parseFloat(document.getElementById('sick-days').value) || 0;
         const l = parseInt(document.getElementById('late-times').value) || 0;
-        const p = parseInt(document.getElementById('private-leave').value) || 0;
-        const index = s + p + (l * 3);
-        let score = (index === 0) ? 8 : (index < 3) ? 7 : (index < 6) ? 6 : (index < 9) ? 5 : (index < 12) ? 4 : (index < 15) ? 3 : (index < 18) ? 2 : 1;
+        const p = parseFloat(document.getElementById('private-leave').value) || 0;
+        const index = s + p + (l * 4);
+        let score = (index === 0) ? 8 : (index < 3) ? 7 : (index < 6) ? 6 : (index < 10) ? 5 : (index < 14) ? 4 : (index < 18) ? 3 : (index < 22) ? 2 : 1;
         document.getElementById('attendance-score').value = score;
         updateGrandTotal();
     }
 
     function calculateCPD() {
-        const h = parseInt(document.getElementById('cpd-hours').value) || 0;
+        const h = parseFloat(document.getElementById('cpd-hours').value) || 0;
         let score = (h >= 75) ? 8 : (h >= 60) ? 7 : (h >= 50) ? 6 : (h >= 40) ? 5 : (h >= 30) ? 4 : (h >= 25) ? 3 : (h >= 20) ? 2 : 1;
         document.getElementById('cpd-score').value = score;
         updateGrandTotal();
@@ -251,15 +264,18 @@
         const data = {};
         const fields = ['teacher_name', 'sjacs_exp', 'current_rank', 'app_date', 'subjects', 'admin_duty', 'appraiser_name', 'appraiser-position', 'sick-days', 'late-times', 'private-leave', 'cpd-hours'];
         fields.forEach(id => data[id] = document.getElementById(id).value);
-        const code = Math.floor(1000 + Math.random() * 9000);
+        
+        // Revised to 6-Digit Code
+        const code = Math.floor(100000 + Math.random() * 900000);
+        
         database.ref('drafts/' + code).set(data).then(() => {
-            document.getElementById('link-output').innerHTML = "CODE: " + code;
-            alert("Draft Saved.");
+            document.getElementById('link-output').innerHTML = "6-DIGIT CODE: " + code;
+            alert("Draft Saved. Please provide the 6-digit code to the appraiser.");
         });
     }
 
     window.onload = function() {
-        const code = prompt("Enter 4-digit Code or leave blank:");
+        const code = prompt("Enter 6-digit Draft Code (or leave blank for new):");
         if (code && code.trim() !== "") {
             database.ref('drafts/' + code.trim()).once('value').then(snap => {
                 const d = snap.val();
@@ -270,6 +286,8 @@
                     document.querySelectorAll('.phase1-input').forEach(i => i.disabled = true);
                     document.getElementById('admin-panel').style.display = 'none';
                     toggleTeachingSection();
+                } else {
+                    alert("Invalid code.");
                 }
             });
         }
@@ -277,7 +295,10 @@
 
     function toggleTeachingSection() {
         const can = (document.getElementById('appraiser-position').value === "Subject Panel Head" || document.getElementById('appraiser-position').value === "VP (Academic)");
-        document.querySelectorAll('.teaching-input').forEach(i => { i.disabled = !can; if(!can) i.value = ""; });
+        document.querySelectorAll('.teaching-input').forEach(i => { 
+            i.disabled = !can; 
+            if(!can) i.value = ""; 
+        });
         document.getElementById('maxPossible').innerText = can ? "96" : "64";
         updateGrandTotal();
     }
@@ -286,7 +307,7 @@
         e.preventDefault();
         let filled = true;
         document.querySelectorAll('.score-input').forEach(i => { if(!i.disabled && !i.value) filled = false; });
-        if (isCanvasEmpty || !filled) { alert("Check all scores and signature."); return; }
+        if (isCanvasEmpty || !filled) { alert("Check all scores (1-8) and signature."); return; }
         
         if (confirm("Confirm Final Submission?")) {
             const scores = {};
@@ -317,8 +338,8 @@
     }
 
     function updateScore(entryId, itemKey, newValue) {
-        const val = parseInt(newValue);
-        if (val < 0 || val > 8 || isNaN(val)) { alert("Enter a score between 0-8"); return; }
+        const val = parseFloat(newValue);
+        if (!Number.isInteger(val) || val < 1 || val > 8) { alert("Integer 1-8 required."); return; }
         database.ref(`evaluations/${entryId}/scores/${itemKey}`).set(newValue.toString());
         database.ref(`evaluations/${entryId}`).once('value', snap => {
             const e = snap.val();
@@ -348,23 +369,14 @@
                 if(!teacherGroups[tName]) teacherGroups[tName] = [];
                 teacherGroups[tName].push(e);
 
-                logHtml += `<tr>
-                    <td><strong>${tName}</strong></td>
-                    <td>${e.appraiser}</td>`;
-                
+                logHtml += `<tr><td><strong>${tName}</strong></td><td>${e.appraiser}</td>`;
                 itemKeys.forEach(k => {
-                    const isTeach = k.startsWith('1');
-                    const isEthic = k.startsWith('2');
-                    const css = isTeach ? 'col-teach' : isEthic ? 'col-ethic' : 'col-cpd';
-                    const val = s[k] || '';
-                    logHtml += `<td class="${css}"><input type="number" class="edit-input" value="${val}" onchange="updateScore('${id}', '${k}', this.value)"></td>`;
+                    const css = k.startsWith('1') ? 'col-teach' : k.startsWith('2') ? 'col-ethic' : 'col-cpd';
+                    logHtml += `<td class="${css}"><input type="number" step="1" class="edit-input" value="${s[k] || ''}" onchange="updateScore('${id}', '${k}', this.value)"></td>`;
                 });
-
                 logHtml += `<td class="col-total">${e.total || 0}</td>
-                    <td>
-                        <button class="btn-admin" style="font-size:9px; padding:4px; background:#2980b9;" onclick="downloadPDF('${id}')">PDF</button>
-                        <button class="btn-delete" onclick="deleteEntry('${id}')">Del</button>
-                    </td></tr>`;
+                    <td><button class="btn-admin" style="font-size:9px; padding:4px; background:#2980b9;" onclick="downloadPDF('${id}')">PDF</button>
+                    <button class="btn-delete" onclick="deleteEntry('${id}')">Del</button></td></tr>`;
             });
             document.getElementById('admin-data-container').innerHTML = logHtml + `</table>`;
 
@@ -375,10 +387,7 @@
                 itemKeys.forEach(i => { sums[i] = 0; counts[i] = 0; });
                 evaluations.forEach(ev => {
                     itemKeys.forEach(i => {
-                        if(ev.scores[i] && ev.scores[i] !== "") {
-                            sums[i] += parseInt(ev.scores[i]);
-                            counts[i]++;
-                        }
+                        if(ev.scores[i] && ev.scores[i] !== "") { sums[i] += parseInt(ev.scores[i]); counts[i]++; }
                     });
                 });
                 let overallTotal = 0;
@@ -398,59 +407,26 @@
         database.ref(`evaluations/${entryId}`).once('value', async (snap) => {
             const data = snap.val();
             if (!data) return;
-
             const element = document.createElement('div');
-            element.style.width = '700px';
-            element.style.padding = '40px';
-            element.style.backgroundColor = 'white';
-            element.style.color = 'black';
-            element.style.position = 'absolute';
-            element.style.left = '-9999px';
-            
+            element.setAttribute("style", "width:680px; padding:30px; background-color:#ffffff; color:#000000; font-family: 'Segoe UI', Arial, sans-serif;");
             element.innerHTML = `
                 <div style="text-align:center; border-bottom:3px solid #2c3e50; padding-bottom:10px; margin-bottom:20px;">
                     <h1 style="margin:0; font-size:24px;">聖若瑟英文中學 (SJACS)</h1>
                     <h2 style="margin:5px; font-size:18px;">2025-2026年度 教師評鑑報告</h2>
                 </div>
-                <div style="margin-bottom:20px;">
-                    <p><strong>教師姓名 (Teacher):</strong> ${data.teacher}</p>
-                    <p><strong>評核人員 (Appraiser):</strong> ${data.appraiser}</p>
-                    <p><strong>日期 (Date):</strong> ${new Date(data.timestamp).toLocaleDateString()}</p>
+                <div style="margin-bottom:20px; font-size:14px;">
+                    <p><strong>教師姓名 (Teacher):</strong> ${data.teacher} | <strong>評核人員:</strong> ${data.appraiser}</p>
+                    <p><strong>日期:</strong> ${new Date(data.timestamp).toLocaleDateString()}</p>
                 </div>
-                <table border="1" style="width:100%; border-collapse:collapse; text-align:center;">
-                    <tr style="background:#f2f2f2;">
-                        <th style="padding:10px;">項目 (Item)</th>
-                        <th style="padding:10px;">評分 (Score)</th>
-                    </tr>
-                    ${itemKeys.map(k => `<tr><td style="padding:8px;">${k}</td><td style="padding:8px;">${data.scores[k] || '0'}</td></tr>`).join('')}
-                    <tr style="background:#2c3e50; color:white; font-weight:bold;">
-                        <td style="padding:10px;">總分 (Grand Total)</td>
-                        <td style="padding:10px;">${data.total}</td>
-                    </tr>
+                <table border="1" style="width:100%; border-collapse:collapse; text-align:center; font-size:13px;">
+                    <tr style="background-color:#f2f2f2;"><th>項目 (Item)</th><th>評分 (Score)</th></tr>
+                    ${itemKeys.map(k => `<tr><td style="padding:6px;">${k}</td><td style="padding:6px;">${data.scores[k] || '0'}</td></tr>`).join('')}
+                    <tr style="background-color:#2c3e50; color:#ffffff; font-weight:bold;"><td style="padding:10px;">總分</td><td>${data.total}</td></tr>
                 </table>
-                <div style="margin-top:40px;">
-                    <p><strong>評核人員簽署 (Appraiser Signature):</strong></p>
-                    ${data.signature ? `<img src="${data.signature}" style="width:250px; border-bottom:1px solid #000;">` : `<p>____________________</p>`}
-                </div>
+                <div style="margin-top:40px;"><strong>評核人員簽署:</strong><br><img src="${data.signature}" style="width:250px; border-bottom:1px solid #000;"></div>
             `;
-
-            document.body.appendChild(element);
-
-            const opt = {
-                margin: 0.5,
-                filename: `SJACS_Eval_${data.teacher}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-
-            try {
-                await html2pdf().set(opt).from(element).save();
-            } catch (err) {
-                console.error("PDF generation error:", err);
-            } finally {
-                document.body.removeChild(element);
-            }
+            try { await html2pdf().set({ margin:0.5, filename:`SJACS_${data.teacher}.pdf`, jsPDF:{unit:'in', format:'a4'} }).from(element).toPdf().save(); }
+            catch (err) { alert("Error: " + err); }
         });
     }
 
