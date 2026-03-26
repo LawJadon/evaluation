@@ -9,6 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --bg: #f4f7f9; --success: #27ae60; --admin: #8e44ad; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -192,7 +194,7 @@
         <div id="teacher-averages-container" class="dashboard-table"></div>
 
         <h2 style="color:var(--admin); margin-top:40px;">2. Editable Raw Entry Log</h2>
-        <p style="font-size: 12px; color: #666;">* Click any score to change it. Changes save automatically.</p>
+        <p style="font-size: 12px; color: #666;">* Click any score to change it. Click PDF to download individual report.</p>
         <div id="admin-data-container" class="dashboard-table"></div>
     </div>
 </div>
@@ -214,7 +216,6 @@
     let isCanvasEmpty = true;
     const itemKeys = ['1A','1B','1C','1D','2A','2B','2C','2D','3A','3B','3C','3D'];
 
-    // Instantly calculate totals as the appraiser types
     document.querySelectorAll('.score-input').forEach(input => {
         input.addEventListener('input', updateGrandTotal);
     });
@@ -290,12 +291,15 @@
         if (confirm("Confirm Final Submission?")) {
             const scores = {};
             document.querySelectorAll('.score-input').forEach(i => { if(i.dataset.item) scores[i.dataset.item] = i.value; });
+            const sigData = canvas.toDataURL("image/png");
+
             const finalData = {
                 teacher: document.getElementById('teacher_name').value,
                 appraiser: document.getElementById('appraiser_name').value,
                 isTeachingAuth: !document.querySelector('.teaching-input').disabled,
                 scores: scores,
                 total: document.getElementById('totalScore').innerText,
+                signature: sigData,
                 timestamp: Date.now()
             };
             database.ref('evaluations').push(finalData).then(() => { location.reload(); });
@@ -336,7 +340,7 @@
             }
 
             const teacherGroups = {};
-            let logHtml = `<table><tr><th style="width:100px;">Teacher</th><th style="width:100px;">Appraiser</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="width:40px;">Tot</th><th style="width:60px;">Act</th></tr>`;
+            let logHtml = `<table><tr><th style="width:100px;">Teacher</th><th style="width:100px;">Appraiser</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="width:40px;">Tot</th><th style="width:110px;">Actions</th></tr>`;
             
             Object.entries(data).forEach(([id, e]) => {
                 const s = e.scores || {};
@@ -357,17 +361,18 @@
                 });
 
                 logHtml += `<td class="col-total">${e.total || 0}</td>
-                    <td><button class="btn-delete" onclick="deleteEntry('${id}')">Del</button></td></tr>`;
+                    <td>
+                        <button class="btn-admin" style="font-size:9px; padding:4px; background:#2980b9;" onclick="downloadPDF('${id}')">PDF</button>
+                        <button class="btn-delete" onclick="deleteEntry('${id}')">Del</button>
+                    </td></tr>`;
             });
             document.getElementById('admin-data-container').innerHTML = logHtml + `</table>`;
 
-            let avgHtml = `<table><tr style="background:#f1f1f1;"><th>Teacher</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="background:#f39c12;">Final Master</th></tr>`;
-            
+            let avgHtml = `<table><tr style="background:#f1f1f1;"><th>Teacher</th><th>1A</th><th>1B</th><th>1C</th><th>1D</th><th>2A</th><th>2B</th><th>2C</th><th>2D</th><th>3A</th><th>3B</th><th>3C</th><th>3D</th><th style="background:#f39c12;">Master</th></tr>`;
             Object.keys(teacherGroups).forEach(name => {
                 const evaluations = teacherGroups[name];
                 const sums = {}; const counts = {};
                 itemKeys.forEach(i => { sums[i] = 0; counts[i] = 0; });
-
                 evaluations.forEach(ev => {
                     itemKeys.forEach(i => {
                         if(ev.scores[i] && ev.scores[i] !== "") {
@@ -376,7 +381,6 @@
                         }
                     });
                 });
-
                 let overallTotal = 0;
                 avgHtml += `<tr><td><strong>${name}</strong></td>`;
                 itemKeys.forEach(i => {
@@ -387,6 +391,66 @@
                 avgHtml += `<td style="background:#fff3cd; font-weight:bold;">${overallTotal.toFixed(1)}</td></tr>`;
             });
             document.getElementById('teacher-averages-container').innerHTML = avgHtml + `</table>`;
+        });
+    }
+
+    async function downloadPDF(entryId) {
+        database.ref(`evaluations/${entryId}`).once('value', async (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            const element = document.createElement('div');
+            element.style.width = '700px';
+            element.style.padding = '40px';
+            element.style.backgroundColor = 'white';
+            element.style.color = 'black';
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            
+            element.innerHTML = `
+                <div style="text-align:center; border-bottom:3px solid #2c3e50; padding-bottom:10px; margin-bottom:20px;">
+                    <h1 style="margin:0; font-size:24px;">聖若瑟英文中學 (SJACS)</h1>
+                    <h2 style="margin:5px; font-size:18px;">2025-2026年度 教師評鑑報告</h2>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <p><strong>教師姓名 (Teacher):</strong> ${data.teacher}</p>
+                    <p><strong>評核人員 (Appraiser):</strong> ${data.appraiser}</p>
+                    <p><strong>日期 (Date):</strong> ${new Date(data.timestamp).toLocaleDateString()}</p>
+                </div>
+                <table border="1" style="width:100%; border-collapse:collapse; text-align:center;">
+                    <tr style="background:#f2f2f2;">
+                        <th style="padding:10px;">項目 (Item)</th>
+                        <th style="padding:10px;">評分 (Score)</th>
+                    </tr>
+                    ${itemKeys.map(k => `<tr><td style="padding:8px;">${k}</td><td style="padding:8px;">${data.scores[k] || '0'}</td></tr>`).join('')}
+                    <tr style="background:#2c3e50; color:white; font-weight:bold;">
+                        <td style="padding:10px;">總分 (Grand Total)</td>
+                        <td style="padding:10px;">${data.total}</td>
+                    </tr>
+                </table>
+                <div style="margin-top:40px;">
+                    <p><strong>評核人員簽署 (Appraiser Signature):</strong></p>
+                    ${data.signature ? `<img src="${data.signature}" style="width:250px; border-bottom:1px solid #000;">` : `<p>____________________</p>`}
+                </div>
+            `;
+
+            document.body.appendChild(element);
+
+            const opt = {
+                margin: 0.5,
+                filename: `SJACS_Eval_${data.teacher}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            try {
+                await html2pdf().set(opt).from(element).save();
+            } catch (err) {
+                console.error("PDF generation error:", err);
+            } finally {
+                document.body.removeChild(element);
+            }
         });
     }
 
