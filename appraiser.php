@@ -53,14 +53,15 @@
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIza...",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project.firebaseio.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "12345",
-  appId: "1:12345:web:6789"
+  apiKey: "AIzaSyAuS7S9jyCEGi6sO1yrXDar1w0NKa-DWQk",
+  authDomain: "sjacs-evaluation.firebaseapp.com",
+  databaseURL: "https://sjacs-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sjacs-evaluation",
+  storageBucket: "sjacs-evaluation.firebasestorage.app",
+  messagingSenderId: "889239849713",
+  appId: "1:889239849713:web:ee35b33bc778b7c6eb7750"
 };
+
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
