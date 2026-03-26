@@ -52,7 +52,15 @@
 </div>
 
 <script>
-    const firebaseConfig = { /* SAME AS ADMIN */ };
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project.firebaseio.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "12345",
+  appId: "1:12345:web:6789"
+};
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
